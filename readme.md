@@ -131,6 +131,124 @@ This method of sending JSON responses is very similar to what we did in Express.
 However, there is a more expressive way of doing this using Django REST
 Framework.
 
+## Running into "Class has no objects member" & "Missing Docstring" Linting Errors?
+Here's how to fix those in VSCode.
+
+1. Install pylint-django by running this command in your project root: `$ pipenv install pylint-django`
+1. Then in VSCode, open up your user `settings.json` file by pressing `Command + Shift + P` and selecting `Preferences: Open Settings (JSON)`.
+1. Add the following key-value pair to the object in `settings.json`:
+
+	```json
+
+	  "python.linting.pylintArgs": [
+	    "--load-plugins=pylint_django",
+	    "--disable=missing-docstring,invalid-name"
+	  ]
+
+	```
+1. Press `Command + S` to save your changes. The linting errors should now disappear!
+
+## URLs
+
+Let's go ahead at how we will access these views -- through the URLs!
+
+In Django, the URL's deviate from the ones we've seen in other frameworks. They
+use stricter parameters where we have to specify the types of parameters. This
+eliminates a ton of the issues we've seen where we've had to reorder urls, but
+it makes them a bit more complicated.
+
+Let's look at the existing `urls.py` in the `tunr_django` directory. In there,
+let's add a couple things.
+
+```python
+# tunr_django/urls.py
+from django.conf.urls import include
+from django.urls import path
+from django.contrib import admin
+
+urlpatterns = [
+    path('admin', admin.site.urls),
+    path('', include('tunr.urls')),
+]
+```
+
+On the first line, we are adding an import - `include` - so that we can include
+other url files in our main one. We are doing this in order to make our app more
+modular. These "mini apps" in Django are supposed to plug into another parent
+app if needed, and modularity makes this possible.
+
+Next, Let's write our urls for our app in another file in the `tunr` directory.
+Create a file called called `urls.py` and paste the following code block into
+it.
+
+```python
+# tunr/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.artist_list, name='artist_list'),
+]
+```
+
+The path takes three arguments:
+
+- The first argument represents the URL path. Here, the artist list is going to be rendered in the root URL. Similar to the "/" URL in other languages, the path of the root URL starts, ends, and has nothing in between. In Django, we do not even need to include the `/`. This way of doing URLs is great because they are explicit. We no longer have to reorder or rename URLs in order to make them work!
+- The URL's second argument is the view function this route is going to match up with in the view file. So, at the root URL, the application will run the `artist_list` function we wrote in `views.py`.
+- Thirdly, we are going to use a named parameter. This is going to be referenced in our templates in order to link from one page to another.
+
+### You Do: Song List URL
+
+Add a URL to `tunr/urls.py` for the Song List.
+
+<details>
+<summary>Solution: Song List URL</summary>
+
+```python
+urlpatterns = [
+    path('', views.artist_list, name='artist_list'),
+    path('songs/', views.song_list, name='song_list')
+]
+```
+
+</details>
+
+## We Do: Artist Show
+
+Now that we have successfully rendered the artist and song lists, let's add
+another route. This time, let's add a show page for each of our two models
+starting with views. In the `tunr/views.py` file, add the following code:
+
+```python
+# tunr/views.py
+from django.http import JsonResponse, HttpResponse
+
+def artist_detail(request, pk):
+    artist = Artist.objects.get(id=pk)
+    return HttpResponse(artist)
+```
+
+This function is similar to the list view. This time, we are selecting one
+artist instead of all of them. To do this, we receive a second parameter to the
+function, the primary key of the artist we want to display. Let's look at where
+that is coming from and connect the URL to the view in `urls.py`.
+
+```python
+# tunr/urls.py
+path('artists/<int:pk>', views.artist_detail, name='artist_detail'),
+```
+
+In the show url we have added `<int:pk>` to the path in the first argument. In
+Django, we use `pk` as an alternate term for `id`. In the database, primary keys
+are the unique ids for each row, and Django adopts that terminology by
+convention. The second argument directs us to the `artist_detail` function in
+`views.py`. The third argument used a named parameter to be referenced in our
+templates.
+
+## You Do: Song Show
+
+Add a `song_detail` function in your `views.py` and add a url in `urls.py` to make it work like we did for the `artist_detail`
+
 ## Django REST Framework
 
 Django REST framework is a package that works nicely with Django's base
@@ -488,10 +606,10 @@ allows us to customize our queries. For example maybe we want to limit the
 records and only show ones that are associated with the currently logged-in
 user.
 
-## Lab: [Django Book API](https://git.generalassemb.ly/sei-921/django-api-lab)
+## Lab: [Django Book API](https://git.generalassemb.ly/SEIR-412/django-api-lab)
 
 Fork and clone the
-[Django Book API](https://git.generalassemb.ly/sei-921/django-api-lab)
+[Django Book API](https://git.generalassemb.ly/SEIR-412/django-api-lab)
 lab. Spend the rest of class working on the lab.
 
 ## Additional Resources
